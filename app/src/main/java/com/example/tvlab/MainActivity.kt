@@ -2,13 +2,12 @@ package com.example.tvlab
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.content.Intent
 import android.graphics.Color
 import android.os.*
-import android.util.DisplayMetrics
 import android.view.MotionEvent
-import android.view.WindowInsets
+import android.view.View
 import android.webkit.WebView
-import android.widget.Button
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -26,6 +25,15 @@ class MainActivity : Activity() {
     class Result(val list: ArrayList<VideoList>)
     class VideoList(val videoID: String, val picture: String, val videoName: String, val author: String)
 
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        if (requestCode == 100 && resultCode == RESULT_OK && data != null) {
+            list.shuffle()
+            init()
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -33,6 +41,7 @@ class MainActivity : Activity() {
         initView()
         setJson()
         init()
+        setListener()
     }
 
     private fun initView() {
@@ -43,11 +52,17 @@ class MainActivity : Activity() {
     }
 
     private fun init() {
-        val item = list[(0 .. list.lastIndex).random()]
+        val item = list[0]
         tvRecommend.text = item.videoName
-        val iframeHtml = "<iframe width=\"962\" height=\"541\" src=\"https://www.youtube.com/embed/${item.videoID}\"?autoplay=1&loop=1&playlist=${item.videoID} title=\"YouTube video player\" frameborder=\"0\" allow=\"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture\" allowfullscreen></iframe>"
+        val iframeHtml = "<iframe width=\"100%\" height=\"100%\" src=\"https://www.youtube.com/embed/${item.videoID}\"?autoplay=1&loop=1&playlist=${item.videoID} title=\"YouTube video player\" frameborder=\"0\" allow=\"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture\" allowfullscreen></iframe>"
         setWebView(iframeHtml)
         initAvatarRecyclerView()
+    }
+
+    private fun setListener() {
+        clPlayVideo.setOnClickListener {
+            gotoWatchVideo(list[0].videoID)
+        }
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -62,9 +77,9 @@ class MainActivity : Activity() {
             //自動適應螢幕大小
             settings.loadWithOverviewMode = true
             // 取消WebView中滾動陰影
-            overScrollMode = android.view.View.OVER_SCROLL_NEVER
+            overScrollMode = View.OVER_SCROLL_NEVER
             // 取消滾動白邊
-            scrollBarStyle = android.view.View.SCROLLBARS_INSIDE_OVERLAY
+            scrollBarStyle = View.SCROLLBARS_INSIDE_OVERLAY
 
             isHorizontalScrollBarEnabled = false
             isVerticalScrollBarEnabled = false
@@ -79,68 +94,47 @@ class MainActivity : Activity() {
 
             setBackgroundColor(Color.parseColor("#000000"))
 
-            //進入後全螢幕用
-//            val width = getScreenWidthPixel()
-//            val height = getScreenHeightPixel()
-//            val widthLong = (width/height) > (16/9)
-//            val params = webView.layoutParams as? ConstraintLayout.LayoutParams ?: return
-//            params.width = if (widthLong) 0 else ConstraintLayout.LayoutParams.MATCH_PARENT
-//            params.height = if (widthLong) ConstraintLayout.LayoutParams.MATCH_PARENT else 0
-//            webView.layoutParams = params
+            loadDataWithBaseURL("https://youtube.com", embeddedCode, "text/html; charset=utf-8", "UTF-8", null)
+            Handler(Looper.getMainLooper()).postDelayed({ clickView(this, 350f, 350f) }, 3000)
         }
-
-        webView.loadDataWithBaseURL("https://youtube.com", embeddedCode, "text/html; charset=utf-8", "UTF-8", null)
-        Handler(Looper.getMainLooper()).postDelayed({ clickView(350f, 350f) }, 3000)
     }
 
     private fun initAvatarRecyclerView() {
-        val layoutManager = LinearLayoutManager(this)
-        layoutManager.orientation = LinearLayoutManager.HORIZONTAL
+        if (!::adapter.isInitialized) {
+            val layoutManager = LinearLayoutManager(this)
+            layoutManager.orientation = LinearLayoutManager.HORIZONTAL
 
-        adapter = VideoListAdapter(this, list)
-        adapter.setListener(object : VideoListAdapter.Listener {
-            override fun onItemClick(embedded: String) {
+            adapter = VideoListAdapter(this, list)
+            adapter.setListener(object : VideoListAdapter.Listener {
+                override fun onItemClick(embedded: String) {
+                    gotoWatchVideo(embedded)
+                }
+            })
 
-            }
-        })
-
-        rvVideoList.layoutManager = layoutManager
-        rvVideoList.adapter = adapter
+            rvVideoList.layoutManager = layoutManager
+            rvVideoList.adapter = adapter
+        } else {
+            adapter.notifyDataSetChanged()
+            rvVideoList.scrollToPosition(0)
+        }
     }
 
-    fun clickView(x: Float, y: Float) {
+    fun clickView(view: View, x: Float, y: Float) {
         var downTime: Long = SystemClock.uptimeMillis()
         val downEvent = MotionEvent.obtain(downTime, downTime, MotionEvent.ACTION_DOWN, x, y, 0)
         downTime += 10
         val upEvent = MotionEvent.obtain(downTime, downTime, MotionEvent.ACTION_UP, x, y, 0)
-        webView.onTouchEvent(downEvent)
-        webView.onTouchEvent(upEvent)
+        view.onTouchEvent(downEvent)
+        view.onTouchEvent(upEvent)
         downEvent.recycle()
         upEvent.recycle()
     }
 
-    private fun getScreenWidthPixel(): Int {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            val windowMetrics = windowManager.currentWindowMetrics
-            val insets = windowMetrics.windowInsets.getInsetsIgnoringVisibility(WindowInsets.Type.systemBars())
-            windowMetrics.bounds.width() - insets.left - insets.right
-        } else {
-            val displayMetrics = DisplayMetrics()
-            (this as Activity).windowManager.defaultDisplay.getMetrics(displayMetrics)
-            displayMetrics.widthPixels
-        }
-    }
-
-    private fun getScreenHeightPixel(): Int {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            val windowMetrics = windowManager.currentWindowMetrics
-            val insets = windowMetrics.windowInsets.getInsetsIgnoringVisibility(WindowInsets.Type.systemBars())
-            windowMetrics.bounds.height() - insets.bottom - insets.top
-        } else {
-            val displayMetrics = DisplayMetrics()
-            windowManager.defaultDisplay.getMetrics(displayMetrics)
-            displayMetrics.heightPixels
-        }
+    private fun gotoWatchVideo(videoID: String) {
+        webView.loadUrl("about:blank")
+        val intent = Intent(this@MainActivity, MainActivity2::class.java)
+        intent.putExtra("Embedded", videoID)
+        startActivityForResult(intent, 100)
     }
 
     private fun setJson() {
