@@ -1,4 +1,10 @@
 <resources>
 
     <style name="Theme.TvLab" parent="@style/Theme.Leanback" />
+
+    <style name="Theme.NoActionBar" parent="@style/Theme.Leanback">
+        <item name="windowNoTitle">true</item>
+        <item name="windowActionBar">false</item>
+        <item name="android:windowFullscreen">true</item>
+    </style>
 </resources>
