@@ -80,7 +80,7 @@ class MainActivity2 : AppCompatActivity() {
         }
     }
 
-    fun clickView(view: View, x: Float, y: Float) {
+    private fun clickView(view: View, x: Float, y: Float) {
         var downTime: Long = SystemClock.uptimeMillis()
         val downEvent = MotionEvent.obtain(downTime, downTime, MotionEvent.ACTION_DOWN, x, y, 0)
         downTime += 10
