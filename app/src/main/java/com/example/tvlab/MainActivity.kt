@@ -76,17 +76,13 @@ class MainActivity : Activity() {
     @SuppressLint("SetJavaScriptEnabled")
     private fun setWebView(embeddedCode: String) {
         with(webView) {
-            //縮放
             settings.setSupportZoom(false)
             settings.builtInZoomControls = false
             settings.displayZoomControls = false
-            //將圖片調整到適合WebView的大小
+
             settings.useWideViewPort = true
-            //自動適應螢幕大小
             settings.loadWithOverviewMode = true
-            // 取消WebView中滾動陰影
             overScrollMode = View.OVER_SCROLL_NEVER
-            // 取消滾動白邊
             scrollBarStyle = View.SCROLLBARS_INSIDE_OVERLAY
 
             isHorizontalScrollBarEnabled = false
@@ -103,7 +99,7 @@ class MainActivity : Activity() {
             setBackgroundColor(Color.parseColor("#000000"))
 
             loadDataWithBaseURL("https://youtube.com", embeddedCode, "text/html; charset=utf-8", "UTF-8", null)
-            Handler(Looper.getMainLooper()).postDelayed({ clickView(this, 350f, 350f) }, 3000)
+            context?.let { Handler(Looper.getMainLooper()).postDelayed({ clickView(this, 350f, 350f) }, 3000) }
         }
     }
 

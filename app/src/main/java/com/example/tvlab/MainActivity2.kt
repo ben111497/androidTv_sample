@@ -76,7 +76,7 @@ class MainActivity2 : AppCompatActivity() {
             setBackgroundColor(Color.parseColor("#000000"))
 
             loadDataWithBaseURL("https://youtube.com", embeddedCode, "text/html; charset=utf-8", "UTF-8", null)
-            Handler(Looper.getMainLooper()).postDelayed({ clickView(this, 350f, 350f) }, 3000)
+            context?.let { Handler(Looper.getMainLooper()).postDelayed({ clickView(this, 350f, 350f) }, 3000) }
         }
     }
 
